@@ -29,6 +29,22 @@ function appInit() {
         a.style.display = (!q || a.textContent.toLowerCase().includes(q) || a.closest('.cat').dataset.cat.toLowerCase().includes(q)) ? '' : 'none';
       });
     });
+    // Keep the currently open document visible in the sidebar: scroll the
+    // sidebar to its highlighted link so the reader can see where they are.
+    const activeLink = sidebar.querySelector('.cat li a.active');
+    if (activeLink) {
+      const cat = activeLink.closest('.cat');
+      if (cat && !cat.classList.contains('open')) cat.classList.add('open');
+      const scrollToActive = () => {
+        const sr = sidebar.getBoundingClientRect();
+        const ar = activeLink.getBoundingClientRect();
+        const target = sidebar.scrollTop + (ar.top - sr.top) - (sr.height / 2) + (ar.height / 2);
+        sidebar.scrollTop = Math.max(0, target);
+      };
+      requestAnimationFrame(scrollToActive);
+      // Fonts can reflow the list after first paint; retry briefly.
+      requestAnimationFrame(() => requestAnimationFrame(scrollToActive));
+    }
   }
   const toggle = document.getElementById('menuToggle');
   if (toggle) toggle.addEventListener('click', () => sidebar && sidebar.classList.toggle('show'));
