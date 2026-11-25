@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: spring-ai-2.0-learning
+  ai:
+    mcp:
+      client:
+        streamable-http:
+          connections:
+            order-server:
+              url: http://localhost:9090
+    openai:
+      api-key: sk-b1b3f5a19ff944b4a0a10910c75dc3c1      # ?????????? Key ??? Git
+      base-url: https://api.deepseek.com
+      chat:
+        model: deepseek-v4-flash              # 2.0 ??? .options ???????
+      embedding: # ??? embedding ??
+        base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+        api-key: sk-5608ecae5def4d0da0b94bff710ddcd2
+        model: text-embedding-v3
+logging:
+  level:
+    com.openai: DEBUG        # Spring AI 2.0 ????? openai-java SDK

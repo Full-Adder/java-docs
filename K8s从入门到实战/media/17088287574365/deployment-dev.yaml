@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: springboot-demo
+  name: springboot-demo
+  namespace: springboot-demo   #一定要写名称空间
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  selector:
+    matchLabels:
+      app: springboot-demo
+  strategy:
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 50%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: springboot-demo
+    spec:
+      imagePullSecrets:
+        - name: harbor-repo-secret
+      containers:
+        - image: $REGISTRY/$PROJECT_ID/$APP_NAME:latest
+          imagePullPolicy: Always
+          name: app
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 300m
+              memory: 600Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: springboot-demo
+  name: springboot-demo
+  namespace: springboot-demo
+spec:
+  ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+#      nodePort: 32607
+  selector:
+    app: springboot-demo
+  sessionAffinity: None
+  type: NodePort
