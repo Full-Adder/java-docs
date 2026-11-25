@@ -35,25 +35,32 @@ function appInit() {
     if (activeLink) {
       const cat = activeLink.closest('.cat');
       if (cat && !cat.classList.contains('open')) cat.classList.add('open');
+      // Re-query the link on every attempt: browser extensions (e.g. page
+      // translators) may replace DOM nodes, detaching the original reference.
+      // A detached node reports zero-sized rects, which must not count as
+      // "in view".
+      const getLink = () => sidebar.querySelector('.cat li a.active');
       const scrollToActive = () => {
+        const link = getLink();
+        if (!link || !link.getClientRects().length) return false;
         const sr = sidebar.getBoundingClientRect();
-        const ar = activeLink.getBoundingClientRect();
+        const ar = link.getBoundingClientRect();
         const target = sidebar.scrollTop + (ar.top - sr.top) - (sr.height / 2) + (ar.height / 2);
         sidebar.scrollTop = Math.max(0, target);
+        return true;
       };
-      // Browser extensions (e.g. page translators) can reflow the list after
-      // load and reset scrollTop. Retry several times over ~2s, and only stop
-      // once the active link is actually inside the sidebar viewport.
       const linkInView = () => {
+        const link = getLink();
+        if (!link || !link.getClientRects().length) return false;
         const sr = sidebar.getBoundingClientRect();
-        const ar = activeLink.getBoundingClientRect();
+        const ar = link.getBoundingClientRect();
         return ar.top >= sr.top && ar.bottom <= sr.bottom;
       };
       let attempts = 0;
       const tryScroll = () => {
-        scrollToActive();
         attempts += 1;
-        if (!linkInView() && attempts < 12) setTimeout(tryScroll, 180);
+        const alive = scrollToActive();
+        if ((!alive || !linkInView()) && attempts < 20) setTimeout(tryScroll, 200);
       };
       if (document.readyState === 'complete') {
         tryScroll();
