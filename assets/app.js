@@ -1,4 +1,22 @@
+function initHighlight() {
+  if (typeof hljs === 'undefined') return;
+  // language aliases used in the docs
+  const aliases = { conf: 'apacheconf', properties: 'ini', log: 'plaintext', shell: 'bash', sh: 'bash' };
+  document.querySelectorAll('pre code').forEach((block) => {
+    let lang = (block.className.match(/language-([\w+-]+)/) || [])[1] || '';
+    lang = aliases[lang] || lang;
+    try {
+      if (lang && hljs.getLanguage(lang)) {
+        hljs.highlightElement(block, { language: lang, ignoreIllegals: true });
+      } else {
+        hljs.highlightElement(block, { ignoreIllegals: true });
+      }
+    } catch (e) { /* leave code as-is on any error */ }
+  });
+}
+
 function appInit() {
+  initHighlight();
   const data = window.DOC_DATA || {docs:[],downloads:[]};
   const sidebar = document.getElementById('sidebar');
   if (sidebar) {
