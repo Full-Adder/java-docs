@@ -41,9 +41,18 @@ function appInit() {
         const target = sidebar.scrollTop + (ar.top - sr.top) - (sr.height / 2) + (ar.height / 2);
         sidebar.scrollTop = Math.max(0, target);
       };
-      requestAnimationFrame(scrollToActive);
-      // Fonts can reflow the list after first paint; retry briefly.
-      requestAnimationFrame(() => requestAnimationFrame(scrollToActive));
+      // Scroll after layout/fonts have settled. appInit runs in <body> before
+      // load, so defer until the window load event and retry a few times.
+      if (document.readyState === 'complete') {
+        scrollToActive();
+        setTimeout(scrollToActive, 150);
+      } else {
+        window.addEventListener('load', () => {
+          scrollToActive();
+          setTimeout(scrollToActive, 150);
+          setTimeout(scrollToActive, 600);
+        }, { once: true });
+      }
     }
   }
   const toggle = document.getElementById('menuToggle');
