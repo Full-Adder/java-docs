@@ -41,17 +41,24 @@ function appInit() {
         const target = sidebar.scrollTop + (ar.top - sr.top) - (sr.height / 2) + (ar.height / 2);
         sidebar.scrollTop = Math.max(0, target);
       };
-      // Scroll after layout/fonts have settled. appInit runs in <body> before
-      // load, so defer until the window load event and retry a few times.
-      if (document.readyState === 'complete') {
+      // Browser extensions (e.g. page translators) can reflow the list after
+      // load and reset scrollTop. Retry several times over ~2s, and only stop
+      // once the active link is actually inside the sidebar viewport.
+      const linkInView = () => {
+        const sr = sidebar.getBoundingClientRect();
+        const ar = activeLink.getBoundingClientRect();
+        return ar.top >= sr.top && ar.bottom <= sr.bottom;
+      };
+      let attempts = 0;
+      const tryScroll = () => {
         scrollToActive();
-        setTimeout(scrollToActive, 150);
+        attempts += 1;
+        if (!linkInView() && attempts < 12) setTimeout(tryScroll, 180);
+      };
+      if (document.readyState === 'complete') {
+        tryScroll();
       } else {
-        window.addEventListener('load', () => {
-          scrollToActive();
-          setTimeout(scrollToActive, 150);
-          setTimeout(scrollToActive, 600);
-        }, { once: true });
+        window.addEventListener('load', tryScroll, { once: true });
       }
     }
   }
