@@ -15,7 +15,26 @@ function initHighlight() {
   });
 }
 
+function initThemeToggle() {
+  const btn = document.getElementById('themeToggle');
+  if (!btn) return;
+  const update = () => {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    btn.textContent = dark ? '☀️' : '🌙';
+    btn.title = dark ? '切换到白天模式' : '切换到夜晚模式';
+    btn.setAttribute('aria-label', btn.title);
+  };
+  update();
+  btn.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('site-theme', next); } catch (e) {}
+    update();
+  });
+}
+
 function appInit() {
+  initThemeToggle();
   initHighlight();
   const data = window.DOC_DATA || {docs:[],downloads:[]};
   const sidebar = document.getElementById('sidebar');
@@ -23,7 +42,7 @@ function appInit() {
     const groups = {};
     data.docs.forEach(d => { const c = d.category_label || d.category; (groups[c] = groups[c] || []).push(d); });
     const order = window.CATEGORY_ORDER || [];
-    let html = '<h2><a href="' + (window.BASE || '') + 'index.html">📚 Java 技术文档合集</a></h2>';
+    let html = '<h2><a href="' + (window.BASE || '') + 'index.html">📚 目录</a></h2>';
     html += '<input class="search-mini" id="sideSearch" placeholder="筛选目录…">';
     Object.keys(groups).sort((a,b) => {
       const ia = order.indexOf(a), ib = order.indexOf(b);
