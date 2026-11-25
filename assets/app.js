@@ -35,38 +35,49 @@ function appInit() {
     if (activeLink) {
       const cat = activeLink.closest('.cat');
       if (cat && !cat.classList.contains('open')) cat.classList.add('open');
-      // Re-query the link on every attempt: browser extensions (e.g. page
-      // translators) may replace DOM nodes, detaching the original reference.
-      // A detached node reports zero-sized rects, which must not count as
-      // "in view".
-      const getLink = () => sidebar.querySelector('.cat li a.active');
-      const scrollToActive = () => {
-        const link = getLink();
-        if (!link || !link.getClientRects().length) return false;
-        const sr = sidebar.getBoundingClientRect();
-        const ar = link.getBoundingClientRect();
-        const target = sidebar.scrollTop + (ar.top - sr.top) - (sr.height / 2) + (ar.height / 2);
-        sidebar.scrollTop = Math.max(0, target);
-        return true;
+      // Always look the elements up fresh: page-translator extensions can
+      // replace DOM nodes after load, detaching earlier references.
+      const findLink = () => {
+        const sb = document.getElementById('sidebar');
+        if (!sb) return null;
+        return sb.querySelector('.cat li a.active');
       };
-      const linkInView = () => {
-        const link = getLink();
-        if (!link || !link.getClientRects().length) return false;
-        const sr = sidebar.getBoundingClientRect();
-        const ar = link.getBoundingClientRect();
-        return ar.top >= sr.top && ar.bottom <= sr.bottom;
+      const inView = (link, sb) => {
+        const lr = link.getBoundingClientRect();
+        const sr = sb.getBoundingClientRect();
+        return lr.top >= sr.top && lr.bottom <= sr.bottom;
+      };
+      const scrollToActive = () => {
+        const sb = document.getElementById('sidebar');
+        const link = findLink();
+        if (!sb || !link || !link.getClientRects().length) return false;
+        // scrollIntoView centers the item inside the nearest scrollable
+        // ancestor (the sidebar) using the current layout each time.
+        link.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+        return inView(link, sb);
       };
       let attempts = 0;
       const tryScroll = () => {
         attempts += 1;
-        const alive = scrollToActive();
-        if ((!alive || !linkInView()) && attempts < 20) setTimeout(tryScroll, 200);
+        const ok = scrollToActive();
+        if (!ok && attempts < 30) setTimeout(tryScroll, 200);
       };
-      if (document.readyState === 'complete') {
+      const start = () => {
         tryScroll();
-      } else {
-        window.addEventListener('load', tryScroll, { once: true });
-      }
+        // Re-run if a translator reflows the list later on.
+        const sb = document.getElementById('sidebar');
+        if (sb && window.MutationObserver) {
+          let quiet;
+          const mo = new MutationObserver(() => {
+            clearTimeout(quiet);
+            quiet = setTimeout(() => { if (attempts >= 30) scrollToActive(); }, 300);
+          });
+          mo.observe(sb, { childList: true, subtree: true, characterData: true });
+          setTimeout(() => mo.disconnect(), 8000);
+        }
+      };
+      if (document.readyState === 'complete') start();
+      else window.addEventListener('load', start, { once: true });
     }
   }
   const toggle = document.getElementById('menuToggle');
