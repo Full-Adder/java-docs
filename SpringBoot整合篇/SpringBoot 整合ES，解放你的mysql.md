@@ -1,54 +1,83 @@
 # SpringBoot 整合ES，解放你的mysql
-## 引言
-最近在准备一期SpringBoot整合大全系列文章，同时也会有视频放出(视频还在酝酿中)，如果大家觉得有帮助，记得点赞加收藏哦。
-话不多说，咱们直接进入正题。
+代码已经上传到码云：[https://gitee.com/exampleclub/springboot-hyper-integration.git,](https://gitee.com/exampleclub/springboot-hyper-integration.git,)欢迎白嫖
 
-代码已经上传到码云：[https://gitee.com/exampleclub/springboot-hyper-integration.git](https://gitee.com/exampleclub/springboot-hyper-integration.git),欢迎白嫖
-## 开整
-### 引入需要的依赖
-前面创建springboot项目就不说了
+## 引言
+平时我们存储数据用的最多的就是mysql,在前面的文章里我也分享过很多关于mysql的知识，今天我们来集成另外一种数据存储系统ES，它是一款NoSql型数据库，主要使用场景有商品搜索，文章搜索等，关键词就是搜索。
+我们先简单介绍下ES。
+
+Elasticsearch是一个基于[Lucene](https://baike.baidu.com/item/Lucene/6753302)的搜索服务器。它提供了一个分布式多用户能力的[全文搜索引擎](https://baike.baidu.com/item/%E5%85%A8%E6%96%87%E6%90%9C%E7%B4%A2%E5%BC%95%E6%93%8E/7847410)，基于RESTful web接口。Elasticsearch是用Java语言开发的，并作为Apache许可条款下的开放源码发布，是一种流行的企业级搜索引擎。Elasticsearch用于[云计算](https://baike.baidu.com/item/%E4%BA%91%E8%AE%A1%E7%AE%97/9969353)中，能够达到实时搜索，稳定，可靠，快速，安装使用方便
+
+这是来自于百度百科的解释，其实我们就直接把它理解成搜索引擎就行了，接下来，我们就开始快速集成，然后上手使用吧！
+
+## 安装ES
+本篇介绍的是如何通过docker安装es，提前你得有docker环境
+
+### 拉取ES镜像
 ```
-   <dependencies>
-        <!--        springboot相关包-->
+docker pull elasticsearch:7.6.2
+```
+### 创建挂载目录
+```
+mkdir -p /Users/example/docker/volumes/data/elasticsearch/config/
+mkdir -p /Users/example/docker/volumes/data/elasticsearch/data
+mkdir -p /Users/example/docker/volumes/data/elasticsearch/plugins
+
+```
+### 编辑配置文件
+```
+vim /Users/example/docker/volumes/data/elasticsearch/config/elasticsearch.yml
+
+```
+elasticsearch.yml
+```
+http.host: 0.0.0.0
+```
+### 运行执行脚本
+```
+docker run --name elasticsearch -p 9200:9200  -p 9300:9300 \
+ -e "discovery.type=single-node" \
+ -e ES_JAVA_OPTS="-Xms256m -Xmx256m" \
+ -v /Users/example/docker/volumes/data/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml \
+ -v /Users/example/docker/volumes/data/elasticsearch/data:/usr/share/elasticsearch/data \
+ -v /Users/example/docker/volumes/data/elasticsearch/plugins:/usr/share/elasticsearch/plugins \
+ -d elasticsearch:7.6.2
+```
+### 安装成功后
+在浏览器输入 http://localhost:9200,如果出现以下内容，则代表安装成功
+```
+{
+  "name" : "43e2638f84ac",
+  "cluster_name" : "elasticsearch",
+  "cluster_uuid" : "hZKT7NQNRl-Dg2Xrb3isGg",
+  "version" : {
+    "number" : "7.6.2",
+    "build_flavor" : "default",
+    "build_type" : "docker",
+    "build_hash" : "ef48eb35cf30adf4db14086e8aabd07ef6fb113f",
+    "build_date" : "2020-03-26T06:34:37.794943Z",
+    "build_snapshot" : false,
+    "lucene_version" : "8.4.0",
+    "minimum_wire_compatibility_version" : "6.8.0",
+    "minimum_index_compatibility_version" : "6.0.0-beta1"
+  },
+  "tagline" : "You Know, for Search"
+}
+```
+## 配置项目
+### 添加必要依赖
+```
+    <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
+            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
         </dependency>
-        <!--        springboot相关包-->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <!--        数据源链接池 不是此部分必备包-->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid-spring-boot-starter</artifactId>
-            <version>1.1.10</version>
-        </dependency>
-        <!--        springboot相关包-->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!--        json序列化相关包 不是本部分关键包-->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>1.2.70</version>
-        </dependency>
-        <!--        mybatis相关包 必备包-->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>3.0.5</version>
-        </dependency>
-        <!--        mysql数据库驱动 必备包-->
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.23</version>
-        </dependency>
+
         <!--        lombok 不用写写get和set，不是本部分必备包-->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -57,161 +86,161 @@
         </dependency>
     </dependencies>
 ```
-### 扫描mapper包路径
-在springboot启动类上添加注解
-```
-@SpringBootApplication
-// 扫描指定包路径
-@MapperScan("com.aims.mybatisplus.dao")
-public class SpringbootMybatisPlusApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(SpringbootMybatisPlusApplication.class, args);
-    }
-}
-```
-### 创建表语句
-```
-CREATE TABLE `member` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `create_by` varchar(32) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '创建人',
-  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_by` varchar(32) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '更新人',
-  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  `member_name` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '会员名称',
-  `member_type` tinyint(3) DEFAULT NULL COMMENT '会员类型',
-  `member_phone` varchar(20) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '手机号',
-  `member_level` tinyint(3) DEFAULT NULL COMMENT '会员等级',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='会员表';
-```
-### 创建实体
-```
-package com.aims.mybatisplus.model.entity;
+ 
+### 添加实体
+其实这里的实体对应的就是ES索引
+@Document(indexName = "sys_user") 代表映射的是sys_user 索引
+@Field(type = FieldType.Keyword) 代表字段应设在es中是keyword类型
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+这里就不介绍过多的ES用法
+
+```
+package com.aims.springbootes.entity;
+
+import lombok.Builder;
 import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.util.List;
 
-/**
- * @description member
- * @author 示例作者
- * @date 2021-11-07
- */
+@Document(indexName = "sys_user")   //文档
 @Data
-// 如果表名和实体名称一样 则不需要使用这个注解
-@TableName("member")
-public class Member implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    @TableId(type = IdType.AUTO)
-    /**
-    * 主键
-    */
-    private Long id;
-
-    /**
-    * 创建人
-    */
-    private String createBy;
-
-    /**
-    * 创建时间
-    */
-    private Date createTime;
-
-    /**
-    * 更新人
-    */
-    private String updateBy;
-
-    /**
-    * 更新时间
-    */
-    private Date updateTime;
-
-    /**
-    * 会员名称
-    */
-    private String memberName;
-
-    /**
-    * 会员类型
-    */
-    private int memberType;
-
-    /**
-    * 手机号
-    */
-    private String memberPhone;
-
-    /**
-    * 会员等级
-    */
-    private int memberLevel;
-
-    public Member() {}
+@Builder
+public class SysUser implements Serializable {
+    @Id //主键
+    private String id;  //ES中id不能定义为Long
+    private String username;
+    private String password;
+    private int level;
+    @Field(type = FieldType.Keyword)
+    private List<String> roles;
 }
 ```
-### 创建操作数据库的mapper层
-你会发现mapper里面啥都不用写，开心的起飞，只要继承BaseMapper就好了
+### 添加操作es的dao
+ElasticsearchRepository 遵循Spring-data的规范，所以操作es，就相当于我们使用jpa去操作数据库一样
 ```
-package com.aims.mybatisplus.dao;
+package com.aims.springbootes.dao;
 
-import com.aims.mybatisplus.model.entity.Member;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.Mapper;
+import com.aims.springbootes.entity.SysUser;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 /**
- * @author 示例作者
- * @description memberMapper
- * @date 2021-11-07
+ * 第一种方式，类似于JPA，编写一个ElasticsearchRepository
+ *  第一个泛型为Bean的类型
+ *  第二个泛型为Bean的主键类型
  */
-@Mapper
-public interface MemberMapper extends BaseMapper<Member> {
-// 用上
+@Repository
+public interface SysUserDao extends ElasticsearchRepository<SysUser,String> {
 
 }
 ```
-### 配置数据库链接
+### 添加配置信息
 ```
 spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/springboot-integration?useUnicode=true&characterEncoding=utf-8
-    username: aims
-    password: aims
-    type: com.alibaba.druid.pool.DruidDataSource
-    driver-class-name: com.mysql.cj.jdbc.Driver
-// 下面这个是开启sql打印的，不是必须要配置的
-mybatis-plus:
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    elasticsearch:
+      rest:
+        uris: http://localhost:9200
 ```
-到此 集成mybatisPlus已经完成了，我们现在写几个简单的接口来演示下mapper相关的api
+### 编写test，测试添加数据到ES中
+这里通过往ES中塞入1000条数据，我们运行下，但是我们现在不知道有没有插入进去。
+```
+    @Test
+    public void testInsert() {
+        List<String> list = new ArrayList<>();
+        list.add("teacher");
+        list.add("student");
+        list.add("admin");
+        list.add("leader");
+        for (int i = 0; i < 1000; i++) {
+            int toIndex = new Random(1).nextInt(4);
+            SysUser build = SysUser.builder()
+                    .password("123456")
+                    .username("示例作者")
+                    .level(i)
+                    .roles(list.subList(0, toIndex))
+                    .build();
+            sysUserDao.save(build);
+        }
+        System.out.printf("结束");
+    }
+```
+在编写一个查询的,来验证是否插入成功
+```
+    @Test
+    public void testFindAll(){
+        Iterable<SysUser> all = sysUserDao.findAll();
+        all.forEach((sysUser)->{
+            System.out.printf(sysUser.getId());
+        });
+    }
+```
+到这已经集成了ES，更多Spring-Data语法可以参考JPA的写法，在IDEA中会有很多智能提示，帮助你写的。
 
-## 添加相关接口
-### 查询接口
-通过lambada表达式轻松可以实现相关sql操作
+## 集成Spring-data-es后的思考
+使用spring-data-es 提供的ElasticsearchRepository
+只能进行简单的增删改差操作，如果碰到一些稍微复杂的聚合操作，他就很难应付了，所以这里有几个建议：
+
+- 如果只需要做简单增删改查操作，直接继承ElasticsearchRepository即可
+- 如果项目中有非常复杂的查询或聚合操纵，可以使用结合ElasticsearchRestTemplate做一些复杂的操作，这个包不需要再引用其他依赖，已经集成在spring-data-es里面了。
+
+## 如何利用客户端快速编写ES 语句
+这里我要介绍一款软件 kibana，它和es是老组合了，通过它能够直接连接es，直接在页面编写ES语句，值得一提的是它的语法智能提示简直不要太棒了
+### docker安装kibana
+#### 拉取镜像
+这个一定要和es的版本保持一致，防止api不兼容
 ```
-   @GetMapping
-    public String get(@RequestParam("name") String name) {
-        
-        LambdaQueryWrapper<Member> lambda = new QueryWrapper<Member>().lambda();
-        lambda.eq(Member::getMemberName, name);
-        Member member = memberMapper.selectOne(lambda);
-        return Objects.isNull(member) ? "没找到信息" : JSON.toJSONString(member);
-    }
+docker pull kibana:7.6.2
 ```
-### 新增接口
-添加操作更是简单到无语，后续会出一篇文章讲解这方面的常规操作语法，敬请期待!
+#### 创建挂载目录
 ```
-    @PostMapping
-    public int post(@RequestBody Member member) {
-        int effectNum = memberMapper.insert(member);
-        return effectNum;
-    }
+mkdir -p /Users/example/docker/volumes/data/kibana/config/
 ```
+#### 编辑配置文件
+`vim /Users/example/docker/volumes/data/kibana/config/kibana.yml
+```
+#
+# ** THIS IS AN AUTO-GENERATED FILE **
+#
+# Default Kibana configuration for docker target
+server.name: kibana
+server.host: "0"
+elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+xpack.monitoring.ui.container.elasticsearch.enabled: true
+```
+#### 运行启动脚本
+当然要先保证es已经启动了，否则kibana无法启动，因为要依赖前者
+```
+ docker run -d \
+  --name=kibana \
+  --restart=always \
+  --link elasticsearch:elasticsearch \
+  -p 5601:5601 \
+  -v /Users/example/docker/volumes/data/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml \
+  kibana:7.6.2
+```
+等待一两分钟，打开浏览器 http://localhost:5601
+如果出现下面这个，就再等一会
+![image.png](media/16838992943055/16984589098219.png)
+
+点击小扳手，打开客户端
+
+![image.png](media/16838992943055/16984589098229.png)
+输入查询语句
+```
+POST sys_user/_search
+{
+}
+```
+点击执行按钮，可以看到我们插入的数据
+![image.png](media/16838992943055/16984589098241.png)
+
+到这里，已经介绍完了如何集成es，以及如何使用kibana 快速编写sql，进行查询，咱们下期再见

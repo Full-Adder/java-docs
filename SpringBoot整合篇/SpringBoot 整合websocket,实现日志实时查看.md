@@ -1,92 +1,41 @@
 # SpringBoot 整合websocket,实现日志实时查看
 
 ## 引言
-本篇文章介绍了如何快速整合sharding-jdbc,以及核心概念介绍。
+最近在做的一个功能模块：需要将项目启动后产生的任务日志实的传送到前端，方便用户能够实时看到运行的过程，相信也有很多同学做过类似的案例。
+
+其实这里主要就是分为以下三个步骤
+
+- 用户点击查看日志按钮，与后端进行通道连接
+- 监听日志文件变化
+- 将变化的内容通过websocket 发送到前端
+- 用户关闭窗口，是否资源并且关闭监听
+
+## 实现的功能点
+### 实时日志输出
+实时传回文件中增量数据
+### 首次发送所有文本
+建立连接时，会把日志中的数据全部发回来
+### 会话关闭，主动释放资源
+用户如果关闭窗口，会主动释放监听资源，减少资源的空占用
+
 ## 开整
-### 核心概念
 
-- 逻辑表：水平拆分的数据库的相同逻辑和数据结构表的总称 
-- 真实表：在分片的数据库中真实存在的物理表。 
-- 数据节点：数据分片的最小单元。由数据源名称和数据表组成 
-- 绑定表：分片规则一致的主表和子表。 
-- 广播表：也叫公共表，指素有的分片数据源中都存在的表，表结构和表中的数据 
-- 在每个数据库中都完全一致。例如字典表。 
-- 分片键：用于分片的数据库字段，是将数据库(表)进行水平拆分的关键字段。 
-- SQL中若没有分片字段，将会执行全路由，性能会很差。 
-- 分片算法：通过分片算法将数据进行分片，支持通过=、BETWEEN和IN分片。 
-- 分片算法需要由应用开发者自行实现，可实现的灵活度非常高。 
-- 分片策略：真正用于进行分片操作的是分片键+分片算法，也就是分片策略。在 
-- ShardingJDBC中一般采用基于Groovy表达式的inline分片策略，通过一个包含 
-- 分片键的算法表达式来制定分片策略，如t_user_$->{u_id%8}标识根据u_id模8，分成8张表，表名称为t_user_0到t_user_7。
-### 默认分片算法
+先说下引入websocket的几个坑
+### 必入的坑
+#### 坑一
+在websocket 中使用antowired 无效，可以自定义一个SpringContextUtils获取，或者使用构造方法注入
+#### 坑二
+spring 给每个session会话都会创建一个websocket实例，如果需要共享变量，可以使用static修饰
+#### 坑三
+如果websocket中使用SpringContextUtils获取实例，一定要注意加载顺序，一定要保证SpringContextUtils在当前websocket之前加载，可以使用@DependsOn(value = "springContextUtils")进行修饰
 
-- NoneShardingStrategy：不分片
-- InlineShardingStrategy
-   - 配置参数： inline.shardingColumn 分片键；inline.algorithmExpression 分片表达式
-   - 实现方式： 按照分片表达式来进行分片。user_${id%2}
-- StandardShardingStrategy
-   - 配置参数：standard.sharding-column 分片键；standard.precise-algorithm-class-name 精确分片算法类名；standard.range-algorithm-class-name 范围分片算法类名
-   - 实现方式：
-      - standard.sharding-column  指定分片字段
-      - preciseAlgorithmClassName 指定分片算法
-- ComplexShardingStrategy
-
-支持多分片键的复杂分片策略。
-
-   - complex.sharding-columns 分片键(多个); 
-   - complex.algorithm-class-name 分片算法实现类。
-- HintShardingStrategy
-
-不需要分片键的强制分片策略
-### 引入依赖
-```
- 				<!--        sharding-jdbc相关包-->
+### 引入websocket 相关依赖
+```c
+    <dependencies>
         <dependency>
-            <groupId>io.shardingsphere</groupId>
-            <artifactId>sharding-jdbc-spring-boot-starter</artifactId>
-            <version>3.0.0</version>
-        </dependency>
-        
-        
-        <!--        springboot相关包-->
-        <dependency>
+            <!-- websocket -->
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-        </dependency>
-        <!--        springboot相关包-->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <!--        数据源链接池 不是此部分必备包-->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid-spring-boot-starter</artifactId>
-            <version>1.1.10</version>
-        </dependency>
-        <!--        springboot相关包-->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!--        json序列化相关包 不是本部分关键包-->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>1.2.70</version>
-        </dependency>
-        <!--        mybatis相关包 必备包-->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>3.4.3.4</version>
-        </dependency>
-        <!--        mysql数据库驱动 必备包-->
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.23</version>
+            <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
         <!--        lombok 不用写写get和set，不是本部分必备包-->
         <dependency>
@@ -94,312 +43,404 @@
             <artifactId>lombok</artifactId>
             <version>1.18.18</version>
         </dependency>
+        <!--        工具库封装-->
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.8.1</version>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.7.12</version>
         </dependency>
+    </dependencies>
 ```
-### 创建配置文件application.yml
-实现了分库分表
-```
-server:
-  port: 9999
-spring:
-  main:
-    allow-bean-definition-overriding: true
-  application:
-    name: springboot-sharding-jdbc
-sharding:
-  jdbc:
-    datasource:
-      names: ds0,ds1
-      # 数据源ds0
-      ds0:
-        type: com.alibaba.druid.pool.DruidDataSource
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://cloud.lebao.site:3306/ams_sharding_order_0
-        username: root
-        password: root
-      ds1:
-        type: com.alibaba.druid.pool.DruidDataSource
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://cloud.lebao.site:3306/ams_sharding_order_1
-        username: root
-        password: root
-    config:
-      sharding:
-        props:
-          sql.show: true
-        tables:
-          demo_order:  #t_user表
-            actual-data-nodes: ds${0..1}.demo_order_${0..1}    #数据节点,均匀分布
-            database-strategy:
-              inline:
-                sharding-column: activity_id
-                algorithm-expression: ds${activity_id % 2}  #按模运算分配
-            table-strategy:  #分表策略
-              inline: #行表达式
-                sharding-column: activity_id
-                algorithm-expression: demo_order_${activity_id % 2}  #按模运算分配
+### 添加websocket 配置
+```c
+package com.ams.log.websocket.config;
 
-
-```
-### 创建分布式序列生成器
-```
-package com.ams.sharding.jdbc.util;
-
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
-
-import java.net.Inet4Address;
-import java.net.UnknownHostException;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 /**
  * Created with IntelliJ IDEA.
  *
- * @date： 2021/11/30
+ * @date： 2021/11/24
+ * @description：
+ * @modifiedBy：
+ * @version: 1.0
+ */
+@Configuration
+public class WebSocketConfig {
+
+    /**
+     * 注入一个ServerEndpointExporter,该Bean会自动注册使用@ServerEndpoint注解申明的websocket endpoint
+     */
+    @Bean
+    public ServerEndpointExporter serverEndpointExporter() {
+        return new ServerEndpointExporter();
+    }
+
+}
+```
+### 创建文件监听回调配置
+```c
+package com.ams.log.websocket.config;
+/**
+ * Created with IntelliJ IDEA.
+ *
+ * @date： 2021/11/24
+ * @description：
+ * @modifiedBy：
+ * @version: 1.0
+ */
+
+/**
+ * 文件监听停止事件回调
+ */
+public interface FileListenerStopCallback {
+    /**
+     * 处理查询出来的数据
+     * @param
+     */
+    boolean boolStop();
+}
+
+```
+### 创建异步线程池配置
+文件监听必须使用异步，否则会导致占用主线程，导致无法断开连接
+```c
+package com.ams.log.websocket.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+import java.util.concurrent.Executor;
+/**
+ * Created with IntelliJ IDEA.
+ *
+ * @date： 2021/11/24
+ * @description：
+ * @modifiedBy：
+ * @version: 1.0
+ */
+@EnableAsync
+@Configuration
+public class AsyncConfig {
+    @Bean("logFileListenerExecutor")
+    public Executor logFileListenerExecutor() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setCorePoolSize(10);
+        taskExecutor.setMaxPoolSize(50);
+        taskExecutor.setQueueCapacity(2000);
+        taskExecutor.setKeepAliveSeconds(60);
+        taskExecutor.setThreadNamePrefix("logFileListenerExecutor--");
+        taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
+        taskExecutor.setAwaitTerminationSeconds(60);
+        return taskExecutor;
+    }
+}
+
+```
+### 创建异步服务
+```c
+package com.ams.log.websocket.service;
+
+import com.ams.log.websocket.utils.FileWatcher;
+import com.ams.log.websocket.utils.WebSocketUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+import javax.websocket.Session;
+import java.nio.file.WatchService;
+import java.util.Map;
+
+/**
+ * Created with IntelliJ IDEA.
+ *
+ * @date： 2021/11/24
+ * @description：
+ * @modifiedBy：
+ * @version: 1.0
+ */
+@Component
+@Slf4j
+public class AsyncService {
+
+    @Async("logFileListenerExecutor")
+    public void startListenLogFileAndSendWebsocket(Session session, String filePath, String fileName, Map<Session, WatchService> map) {
+        try {
+            log.info("开始监听 {} {}", filePath, fileName);
+            FileWatcher.watcherLog(map.get(session), filePath, fileName, log -> WebSocketUtil.sendMessage(log, session), () -> {
+                // 如果会话移除则停止监听 释放资源
+                boolean boolStop = !map.containsKey(session);
+                return boolStop;
+            });
+            log.info("停止监听 {} {} 释放资源 返回主程序", filePath, fileName);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+```
+### 创建文件内容监控工具类
+
+```c
+package com.ams.log.websocket.utils;
+
+import com.ams.log.websocket.config.FileListenerStopCallback;
+import lombok.extern.slf4j.Slf4j;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+
+/**
+ * Created with IntelliJ IDEA.
+ *
+ * @date： 2021/11/24
  * @description：
  * @modifiedBy：
  * @version: 1.0
  */
 @Slf4j
-public class SnowflakeIdWorker {
+public class FileWatcher {
     /**
-     * 开始时间截 (2015-01-01)
-     */
-    private final long twepoch = 1489111610226L;
-    /**
-     * 机器id所占的位数
-     */
-    private final long workerIdBits = 5L;
-    /**
-     * 数据标识id所占的位数
-     */
-    private final long dataCenterIdBits = 5L;
-    /**
-     * 支持的最大机器id，结果是31 (这个移位算法可以很快的计算出几位二进制数所能表示的最大十进制数)
-     */
-    private final long maxWorkerId = -1L ^ (-1L << workerIdBits);
-    /**
-     * 支持的最大数据标识id，结果是31
-     */
-    private final long maxDataCenterId = -1L ^ (-1L << dataCenterIdBits);
-    /**
-     * 序列在id中占的位数
-     */
-    private final long sequenceBits = 12L;
-    /**
-     * 机器ID向左移12位
-     */
-    private final long workerIdShift = sequenceBits;
-    /**
-     * 数据标识id向左移17位(12+5)
-     */
-    private final long dataCenterIdShift = sequenceBits + workerIdBits;
-    /**
-     * 时间截向左移22位(5+5+12)
-     */
-    private final long timestampLeftShift = sequenceBits + workerIdBits + dataCenterIdBits;
-    /**
-     * 生成序列的掩码，这里为4095 (0b111111111111=0xfff=4095)
-     */
-    private final long sequenceMask = -1L ^ (-1L << sequenceBits);
-    /**
-     * 工作机器ID(0~31)
-     */
-    private long workerId;
-    /**
-     * 数据中心ID(0~31)
-     */
-    private long dataCenterId;
-    /**
-     * 毫秒内序列(0~4095)
-     */
-    private long sequence = 0L;
-    /**
-     * 上次生成ID的时间截
-     */
-    private long lastTimestamp = -1L;
-
-    private static SnowflakeIdWorker idWorker;
-
-    static {
-        idWorker = new SnowflakeIdWorker(getWorkId(), getDataCenterId());
-    }
-
-    //==============================Constructors=====================================
-
-    /**
-     * 构造函数
+     * 文件监控
+     * 同步调用会阻塞
      *
-     * @param workerId     工作ID (0~31)
-     * @param dataCenterId 数据中心ID (0~31)
+     * @param filePath
+     * @param fileName
+     * @param consumer
+     * @throws IOException
+     * @throws InterruptedException
      */
-    public SnowflakeIdWorker(long workerId, long dataCenterId) {
-        if (workerId > maxWorkerId || workerId < 0) {
-            throw new IllegalArgumentException(String.format("workerId can't be greater than %d or less than 0", maxWorkerId));
-        }
-        if (dataCenterId > maxDataCenterId || dataCenterId < 0) {
-            throw new IllegalArgumentException(String.format("dataCenterId can't be greater than %d or less than 0", maxDataCenterId));
-        }
-        this.workerId = workerId;
-        this.dataCenterId = dataCenterId;
-    }
+    public static void watcherLog(WatchService watchService, String filePath, String fileName, Consumer<String> consumer, FileListenerStopCallback callback) throws IOException, InterruptedException {
 
-    // ==============================Methods==========================================
-
-    /**
-     * 获得下一个ID (该方法是线程安全的)
-     *
-     * @return SnowflakeId
-     */
-    public synchronized long nextId() {
-        long timestamp = timeGen();
-        //如果当前时间小于上一次ID生成的时间戳，说明系统时钟回退过这个时候应当抛出异常
-        if (timestamp < lastTimestamp) {
-            throw new RuntimeException(
-                    String.format("Clock moved backwards.  Refusing to generate id for %d milliseconds", lastTimestamp - timestamp));
-        }
-        //如果是同一时间生成的，则进行毫秒内序列
-        if (lastTimestamp == timestamp) {
-            sequence = (sequence + 1) & sequenceMask;
-            //毫秒内序列溢出
-            if (sequence == 0) {
-                //阻塞到下一个毫秒,获得新的时间戳
-                timestamp = tilNextMillis(lastTimestamp);
+        File configFile = Paths.get(filePath + File.separator + fileName).toFile();
+        Paths.get(filePath).register(watchService, StandardWatchEventKinds.ENTRY_CREATE,
+                StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE);
+        // 文件读取行数
+        AtomicLong lastPointer = new AtomicLong(new RandomAccessFile(configFile, "r").length());
+        do {
+            if (callback.boolStop()) {
+                // 停止监听
+                break;
             }
-        }
-        //时间戳改变，毫秒内序列重置
-        else {
-            sequence = 0L;
-        }
-        //上次生成ID的时间截
-        lastTimestamp = timestamp;
+            WatchKey key = null;
+            try {
+                key = watchService.take();
+            } catch (Exception e) {
+                break;
+            }
+            if (Objects.isNull(key)) {
+                log.error("获取 WatchKey 失败");
+                return;
+            }
+            List<WatchEvent<?>> watchEvents = key.pollEvents();
+            watchEvents.stream().filter(
+                    i -> StandardWatchEventKinds.ENTRY_MODIFY == i.kind()
+                            && fileName.equals(((Path) i.context()).getFileName().toString())
+            ).forEach(i -> {
+                if (i.count() > 1) {
+                    return;
+                }
+                StringBuilder str = new StringBuilder();
+                // 读取文件
+                lastPointer.set(getFileContent(configFile, lastPointer.get(), str));
 
-        //移位并通过或运算拼到一起组成64位的ID
-        return ((timestamp - twepoch) << timestampLeftShift)
-                | (dataCenterId << dataCenterIdShift)
-                | (workerId << workerIdShift)
-                | sequence;
+                if (str.length() != 0) {
+                    consumer.accept(str.toString());
+                }
+            });
+            key.reset();
+        } while (true);
     }
 
     /**
-     * 阻塞到下一个毫秒，直到获得新的时间戳
+     * beginPointer > configFile 时会从头读取
      *
-     * @param lastTimestamp 上次生成ID的时间截
-     * @return 当前时间戳
+     * @param configFile
+     * @param beginPointer
+     * @param str          内容会拼接进去
+     * @return 读到了多少字节, -1 读取失败
      */
-    protected long tilNextMillis(long lastTimestamp) {
-        long timestamp = timeGen();
-        while (timestamp <= lastTimestamp) {
-            timestamp = timeGen();
+    private static long getFileContent(File configFile, long beginPointer, StringBuilder str) {
+        if (beginPointer < 0) {
+            beginPointer = 0;
         }
-        return timestamp;
-    }
-
-    /**
-     * 返回以毫秒为单位的当前时间
-     *
-     * @return 当前时间(毫秒)
-     */
-    protected long timeGen() {
-        return System.currentTimeMillis();
-    }
-
-    private static Long getWorkId() {
+        RandomAccessFile file = null;
+        boolean top = true;
         try {
-            String hostAddress = Inet4Address.getLocalHost().getHostAddress();
-            int[] ints = StringUtils.toCodePoints(hostAddress);
-            int sums = 0;
-            for (int b : ints) {
-                sums += b;
+            file = new RandomAccessFile(configFile, "r");
+            if (beginPointer > file.length()) {
+                return 0;
             }
-            return (long) (sums % 32);
-        } catch (UnknownHostException e) {
-            // 如果获取失败，则使用随机数备用
-            return RandomUtils.nextLong(0, 31);
+            file.seek(beginPointer);
+            String line;
+            while ((line = file.readLine()) != null) {
+                if (top) {
+                    top = false;
+                } else {
+                    str.append("\n");
+                }
+                str.append(new String(line.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8));
+            }
+            return file.getFilePointer();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return -1;
+        } finally {
+            if (file != null) {
+                try {
+                    file.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
-
-    private static Long getDataCenterId() {
-        int[] ints = StringUtils.toCodePoints(SystemUtils.getHostName());
-        int sums = 0;
-        for (int i : ints) {
-            sums += i;
-        }
-        return (long) (sums % 32);
-    }
-
-    /**
-     * 静态工具类
-     *
-     * @return
-     */
-    public static synchronized Long generateId() {
-        return idWorker.nextId();
-    }
-
 }
-```
-### 添加接口
-调用分布式序列生成器生成activityId
-```
-package com.ams.sharding.jdbc.controller;
 
-import com.ams.sharding.jdbc.domain.Order;
-import com.ams.sharding.jdbc.service.OrderService;
-import com.ams.sharding.jdbc.util.SnowflakeIdWorker;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Objects;
+
+```
+### 创建获取bean实例工具类
+```c
+package com.ams.log.websocket.utils;
+ 
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.stereotype.Component;
 
 /**
  * Created with IntelliJ IDEA.
  *
- * @date： 2021/11/30
+ * @date： 2021/11/24
  * @description：
  * @modifiedBy：
  * @version: 1.0
  */
-@RestController
-@RequestMapping("/test")
-@RequiredArgsConstructor
-public class TestController {
-private final OrderService orderService;
-    @RequestMapping("/sharding/{activityId}")
-    public Long sharding( @PathVariable Long activityId) {
-        Order order = Order.builder()
-                .count(10)
-                .money(10L)
-                .productId(10L)
-                .status(1)
-                .userId(1L)
-                .build();
-        if (Objects.isNull(activityId)){
-            activityId = SnowflakeIdWorker.generateId();
-        }
-        order.setActivityId(activityId);
-        orderService.save(order);
-        return activityId;
-    }
+@Component
+public class SpringContextUtils implements ApplicationContextAware {
+	private static ApplicationContext applicationContext = null;
+ 
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		if (SpringContextUtils.applicationContext == null) {
+			SpringContextUtils.applicationContext = applicationContext;
+		}
+	}
+ 
+	/**
+	 * @apiNote 获取applicationContext
+	 * @author hongsir 2017/11/3 19:40:00
+	 */
+	public static ApplicationContext getApplicationContext() {
+		return applicationContext;
+	}
+ 
+	/**
+	 * @apiNote 通过name获取 Bean.
+	 * @author hongsir 2017/11/3 19:39:00
+	 */
+	public static Object getBean(String name) {
+		return getApplicationContext().getBean(name);
+	}
+ 
+	/**
+	 * @apiNote 通过class获取Bean.
+	 * @author hongsir 2017/11/3 19:39:00
+	 */
+	public static <T> T getBean(Class<T> clazz) {
+		return getApplicationContext().getBean(clazz);
+	}
+ 
+	/**
+	 * @apiNote 通过name, 以及Clazz返回指定的Bean
+	 * @author hongsir 2017/11/3 19:39:00
+	 */
+	public static <T> T getBean(String name, Class<T> clazz) {
+		return getApplicationContext().getBean(name, clazz);
+	}
+}
+```
+### 创建发送消息的工具类
+```c
+package com.ams.log.websocket.utils;
 
+import lombok.extern.slf4j.Slf4j;
+
+import javax.websocket.Session;
+
+/**
+ * Created with IntelliJ IDEA.
+ *
+ * @date： 2021/11/24
+ * @description：
+ * @modifiedBy：
+ * @version: 1.0
+ */
+@Slf4j
+public class WebSocketUtil {
+    /**
+     * 服务端发送消息给客户端
+     */
+    public static void sendMessage(String message, Session toSession) {
+        try {
+            toSession.getBasicRemote().sendText(message);
+        } catch (Exception e) {
+            log.error("服务端发送消息给客户端失败：{}", e);
+        }
+    }
 }
 
 ```
-### 测试
-这里为了方便，我在接口中添加了参数，可以指定活动id，因为我们的库和表都是 activity_id % 2得到，所以通过设置奇偶数，判断分片策略是否生效
-#### 请求1
-http://localhost:9999/test/sharding/1
-进入了1库1表
-![image.png](media/16838992943128/16984589198450.png)
-#### 请求2
-http://localhost:9999/test/sharding/2
-进入了0库0表
-![image.png](media/16838992943128/16984589198463.png)
-## 结论
-本篇文章通过快速集成sharding-jdbc，实现了分库分表
+### 创建启动类
+```c
+package com.ams.log.websocket;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+/**
+ * Created with IntelliJ IDEA.
+ *
+ * @date： 2021/11/24
+ * @description：
+ * @modifiedBy：
+ * @version: 1.0
+ */
+@SpringBootApplication
+public class LogWebSocketApp {
+    public static void main(String[] args) {
+        SpringApplication.run(LogWebSocketApp.class, args);
+    }
+}
+
+
+```
+## 测试
+### 打开在线测试websocket网址
+[http://www.websocket-test.com/](http://www.websocket-test.com/)
+填入以下地址
+ws://localhost:8080/websocket/log/1/1
+![image.png](media/16838992942899/16984588906744.png)
+### 点击连接
+![image.png](media/16838992942899/16984588906755.png)
+### 往日志文件中写入数据
+![image.png](media/16838992942899/16984588906763.png)
+### 观看控制台输入内容
+![image.png](media/16838992942899/16984588906770.png)
+
+可以看出已经实时推送了
+## 总结
+本章主要介绍了如何通过springboot 整合websocket,实现后端日志在前端进行实时展示的功能，这里主要的一点就就是如何实时监控文件的变化，以及如何借助websocket建立双向通信。
