@@ -264,7 +264,7 @@ private static ReentrantMutexLock reentrantMutexLock = new ReentrantMutexLock();
 </code></pre>
 <p>通过执行结果可以看出：输出结果是按照我们期望执行的。
 需要注意的是，使用该锁在调用unlock方法时，锁被立即释放，并不会等待当前方法块执行完，和synchronized同步块，所以严禁在unlock方法后继续写需要进行同步逻辑</p>
-<p><img src="https://cdn.nlark.com/yuque/0/2022/png/12552073/1641245271643-c715929b-9e0f-4fb0-aa5a-c68e697f4e9f.png#clientId=u19b254fd-26eb-4&amp;from=paste&amp;height=176&amp;id=u502bfee6&amp;originHeight=352&amp;originWidth=1566&amp;originalType=binary&amp;ratio=1&amp;size=96972&amp;status=done&amp;style=none&amp;taskId=u48d6b889-98be-47b1-a7f5-fc4d2001093&amp;width=783" alt="image.png" /></p>
+<p><img src="../assets/remote-images/a242a17153b4.png" alt="image.png" /></p>
 </article>
     <div class="footer-note">本文源文件：<code>并发线程/8.重入锁.md</code> · <a href="../并发线程/8.重入锁.md" target="_blank">在 GitHub 查看原文</a></div>
   </main>

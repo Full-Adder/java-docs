@@ -110,7 +110,7 @@ public class Example20 {
 }
 
 </code></pre>
-<p><img src="https://cdn.nlark.com/yuque/0/2022/png/12552073/1641763067457-0cb870eb-6d2a-41e4-b24c-1a9491cad41d.png#averageHue=%23413b3a&amp;clientId=uadbba1b1-fcdb-4&amp;from=paste&amp;height=519&amp;id=u95d74561&amp;originHeight=1038&amp;originWidth=1596&amp;originalType=binary&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=306668&amp;status=done&amp;style=none&amp;taskId=uf965190b-25f3-4ae5-bc5d-1ea1f3c7fdd&amp;title=&amp;width=798" alt="image.png" />
+<p><img src="../assets/remote-images/ec85ec3ff2da.png" alt="image.png" />
 从结果中可以看出来有三种结果，所以分析看来</p>
 <ul>
 <li>读线程是交叉执行的，并且此时没有写线程在执行</li>
@@ -120,7 +120,7 @@ public class Example20 {
 <p>前面我们说过，并发包中的锁都是基于AQS实现的，锁的状态都是基于state变量进行维护的，那么在读写锁中，state是如何维护这两个状态呢？</p>
 <p>我们想必在读其它框架源码时候，应该也会看到过类似的问题，既然想要一个变量表示多个状态，那么我们就得把这个变量进行拆分，就是拆成bit位进行表示，没错：读写锁的状态位就是这么设计的！</p>
 <h3>读写状态的设计</h3>
-<p><img src="https://cdn.nlark.com/yuque/0/2022/png/12552073/1641766512731-d24620f0-64fa-4d91-8afe-31754dc8a4a9.png#averageHue=%23ebebeb&amp;clientId=uadbba1b1-fcdb-4&amp;from=paste&amp;height=130&amp;id=u7c45fda3&amp;originHeight=260&amp;originWidth=1820&amp;originalType=binary&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=55079&amp;status=done&amp;style=none&amp;taskId=ud71a33a7-cd93-4bee-bb2d-fce61559af3&amp;title=&amp;width=910" alt="image.png" />
+<p><img src="../assets/remote-images/675e4c8875d7.png" alt="image.png" />
 我们分析下读写状态位的设计：</p>
 <ul>
 <li>高16位：代表读状态，计算时通过右移16位，就可以算出当前读锁被获取多少次</li>

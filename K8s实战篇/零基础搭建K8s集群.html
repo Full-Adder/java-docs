@@ -113,7 +113,7 @@ kubectl apply -f calico.yaml
 <h3>验证集群是否部署成功</h3>
 <pre><code>kubectl get nodes
 </code></pre>
-<p><img src="https://cdn.nlark.com/yuque/0/2022/png/12552073/1653919157825-c03f1fb3-6a48-4f0b-8cdf-63335ba563f9.png#clientId=ud9641b8a-ad8f-4&amp;from=paste&amp;height=79&amp;id=u618dfe36&amp;originHeight=79&amp;originWidth=422&amp;originalType=binary&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=9632&amp;status=done&amp;style=none&amp;taskId=u7cb455de-af94-40ee-9acf-981149aba73&amp;title=&amp;width=422" alt="image.png" /></p>
+<p><img src="../assets/remote-images/1c3aedffff32.png" alt="image.png" /></p>
 <h2>安装dashboard</h2>
 <h3>配置文件</h3>
 <pre><code># Copyright 2017 The Kubernetes Authors.
@@ -429,7 +429,7 @@ type: ClusterIP 改为 type: NodePort
 <h3>获取访问端口</h3>
 <pre><code>kubectl get svc -A |grep kubernetes-dashboard
 </code></pre>
-<p><img src="https://cdn.nlark.com/yuque/0/2022/png/12552073/1653919288758-3aefb6ab-faa8-435e-9a0e-7740ff0dba98.png#clientId=ud9641b8a-ad8f-4&amp;from=paste&amp;height=67&amp;id=u144e578f&amp;originHeight=67&amp;originWidth=955&amp;originalType=binary&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=20911&amp;status=done&amp;style=none&amp;taskId=uf4685121-5b13-46d9-be19-791feef8db2&amp;title=&amp;width=955" alt="image.png" /></p>
+<p><img src="../assets/remote-images/6b78e437b435.png" alt="image.png" /></p>
 <h3>创建访问账号</h3>
 <pre><code>vim dash.yaml
 </code></pre>
@@ -462,12 +462,12 @@ subjects:
 
 eyJhbGciOiJSUzI1NiIsImtpZCI6Imhzb0NpcHNvSWZIWnVOeFlFREp4eUZJeTQ0c3ZqeE1MZUtUeFRNbW91d1UifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlcm5ldGVzLWRhc2hib2FyZCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZG1pbi11c2VyLXRva2VuLWd2bmxnIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluLXVzZXIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiI1NjA3NjQwMi04MzM5LTRiYjUtYjIyOC1lNWQxZDFlNjZkMmIiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZXJuZXRlcy1kYXNoYm9hcmQ6YWRtaW4tdXNlciJ9.ZLntlwO_bmmjHsQ4axNAjGUniy9YT2mtoXiYoGF0Xzlj3B75FgyuMaJT-y9dQxdg9ZF62qTUhV7R_VmgiAp1ibi7yzHi0gqRe5FEWAjX0i3j2QwKbKVhQfbBLOt7GA36CFf-wlpS0wkMef-ObQUuHx25DTIz_ymfRLzZl5BKZ-avVgUQaRfhDHlSlaFhJya3tscio1FPHRJqJ1A0u1TmmmSRAl3sOV_J9PERDjYVkwLXJkUdZoevFp-nxgYM5D1uqBfT0KxyNlMA9r-RfZZdQaFiCdP6mtqUQA5Rn4jOAYN85oLAtDQXGId4p39yP52b5BVo8MkOK7VO5z_gcUlIMg
 </code></pre>
-<p><img src="https://cdn.nlark.com/yuque/0/2022/png/12552073/1653919403651-07ec1d42-801d-4df6-b5b5-3074a0ab0197.png#clientId=ud9641b8a-ad8f-4&amp;from=paste&amp;height=175&amp;id=u911de181&amp;originHeight=175&amp;originWidth=1031&amp;originalType=binary&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=85722&amp;status=done&amp;style=none&amp;taskId=ubd3154b4-5266-4304-a89b-b6a5b5b2f4d&amp;title=&amp;width=1031" alt="image.png" /></p>
+<p><img src="../assets/remote-images/f10620352865.png" alt="image.png" /></p>
 <h3>访问dashboard</h3>
 <p><a href="http://%E9%9B%86%E7%BE%A4%E4%B8%AD%E7%9A%84%E4%BB%BB%E6%84%8F%E8%8A%82%E7%82%B9IP:30810%EF%BC%88%E4%B8%8A%E5%9B%BE%E6%9F%A5%E5%87%BA%E6%9D%A5%E7%9A%84%E7%AB%AF%E5%8F%A3%EF%BC%89" target="_blank" rel="noopener">http://集群中的任意节点IP:30810（上图查出来的端口）</a>
-<img src="https://cdn.nlark.com/yuque/0/2022/png/12552073/1653946366241-30ac922e-9f49-4fd6-adbf-b27e345ac812.png#clientId=u4c5d9407-f5db-4&amp;from=paste&amp;height=784&amp;id=u0798e122&amp;originHeight=784&amp;originWidth=1766&amp;originalType=binary&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=117786&amp;status=done&amp;style=none&amp;taskId=u4c0e85eb-6376-4f93-8132-7e551bccd6f&amp;title=&amp;width=1766" alt="image.png" />
-<img src="https://cdn.nlark.com/yuque/0/2022/png/12552073/1653919500434-1e466d84-176b-4179-ba81-65e5e2df0f6c.png#clientId=ud9641b8a-ad8f-4&amp;from=paste&amp;height=731&amp;id=u7a53acf9&amp;originHeight=731&amp;originWidth=1729&amp;originalType=binary&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=96667&amp;status=done&amp;style=none&amp;taskId=u46a69ca9-f527-424f-aa4f-e9049dd5c99&amp;title=&amp;width=1729" alt="image.png" />
-<img src="https://cdn.nlark.com/yuque/0/2022/png/12552073/1653919533150-fe1a0cc8-67bc-474a-ae5f-9ab8f24c6093.png#clientId=ud9641b8a-ad8f-4&amp;from=paste&amp;height=854&amp;id=ua46cbb17&amp;originHeight=854&amp;originWidth=1788&amp;originalType=binary&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=104056&amp;status=done&amp;style=none&amp;taskId=u6de9cc06-826e-4199-95dc-37b6b2937b1&amp;title=&amp;width=1788" alt="image.png" /><img src="https://cdn.nlark.com/yuque/0/2022/png/12552073/1653919578303-6ea0b312-598e-4b02-9b59-15e899aae389.png#clientId=ud9641b8a-ad8f-4&amp;from=paste&amp;height=494&amp;id=u60eb5d89&amp;originHeight=494&amp;originWidth=1810&amp;originalType=binary&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=137500&amp;status=done&amp;style=none&amp;taskId=u9e1f0022-5537-48be-baf1-d1968e1d35c&amp;title=&amp;width=1810" alt="image.png" /></p>
+<img src="../assets/remote-images/1f329b33983c.png" alt="image.png" />
+<img src="../assets/remote-images/c8fda8f8166e.png" alt="image.png" />
+<img src="../assets/remote-images/4273dddaada4.png" alt="image.png" /><img src="../assets/remote-images/5c5c66ae2aaf.png" alt="image.png" /></p>
 </article>
     <div class="footer-note">本文源文件：<code>K8s实战篇/零基础搭建K8s集群.md</code> · <a href="../K8s实战篇/零基础搭建K8s集群.md" target="_blank">在 GitHub 查看原文</a></div>
   </main>

@@ -105,7 +105,7 @@ kubeadm join 192.168.64.3:6443 --token ldnvwc.qfwlv2drz70hg8eu \
 ```
 kubectl get nodes
 ```
-![image.png](https://cdn.nlark.com/yuque/0/2022/png/12552073/1653919157825-c03f1fb3-6a48-4f0b-8cdf-63335ba563f9.png#clientId=ud9641b8a-ad8f-4&from=paste&height=79&id=u618dfe36&originHeight=79&originWidth=422&originalType=binary&ratio=1&rotation=0&showTitle=false&size=9632&status=done&style=none&taskId=u7cb455de-af94-40ee-9acf-981149aba73&title=&width=422)
+![image.png](../assets/remote-images/1c3aedffff32.png)
 ## 安装dashboard
 ### 配置文件
 ```
@@ -425,7 +425,7 @@ type: ClusterIP 改为 type: NodePort
 ```
 kubectl get svc -A |grep kubernetes-dashboard
 ```
-![image.png](https://cdn.nlark.com/yuque/0/2022/png/12552073/1653919288758-3aefb6ab-faa8-435e-9a0e-7740ff0dba98.png#clientId=ud9641b8a-ad8f-4&from=paste&height=67&id=u144e578f&originHeight=67&originWidth=955&originalType=binary&ratio=1&rotation=0&showTitle=false&size=20911&status=done&style=none&taskId=uf4685121-5b13-46d9-be19-791feef8db2&title=&width=955)
+![image.png](../assets/remote-images/6b78e437b435.png)
 ### 创建访问账号
 ```
 vim dash.yaml
@@ -462,9 +462,9 @@ kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get
 
 eyJhbGciOiJSUzI1NiIsImtpZCI6Imhzb0NpcHNvSWZIWnVOeFlFREp4eUZJeTQ0c3ZqeE1MZUtUeFRNbW91d1UifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlcm5ldGVzLWRhc2hib2FyZCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZG1pbi11c2VyLXRva2VuLWd2bmxnIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluLXVzZXIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiI1NjA3NjQwMi04MzM5LTRiYjUtYjIyOC1lNWQxZDFlNjZkMmIiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZXJuZXRlcy1kYXNoYm9hcmQ6YWRtaW4tdXNlciJ9.ZLntlwO_bmmjHsQ4axNAjGUniy9YT2mtoXiYoGF0Xzlj3B75FgyuMaJT-y9dQxdg9ZF62qTUhV7R_VmgiAp1ibi7yzHi0gqRe5FEWAjX0i3j2QwKbKVhQfbBLOt7GA36CFf-wlpS0wkMef-ObQUuHx25DTIz_ymfRLzZl5BKZ-avVgUQaRfhDHlSlaFhJya3tscio1FPHRJqJ1A0u1TmmmSRAl3sOV_J9PERDjYVkwLXJkUdZoevFp-nxgYM5D1uqBfT0KxyNlMA9r-RfZZdQaFiCdP6mtqUQA5Rn4jOAYN85oLAtDQXGId4p39yP52b5BVo8MkOK7VO5z_gcUlIMg
 ```
-![image.png](https://cdn.nlark.com/yuque/0/2022/png/12552073/1653919403651-07ec1d42-801d-4df6-b5b5-3074a0ab0197.png#clientId=ud9641b8a-ad8f-4&from=paste&height=175&id=u911de181&originHeight=175&originWidth=1031&originalType=binary&ratio=1&rotation=0&showTitle=false&size=85722&status=done&style=none&taskId=ubd3154b4-5266-4304-a89b-b6a5b5b2f4d&title=&width=1031)
+![image.png](../assets/remote-images/f10620352865.png)
 ### 访问dashboard
 http://集群中的任意节点IP:30810（上图查出来的端口）
-![image.png](https://cdn.nlark.com/yuque/0/2022/png/12552073/1653946366241-30ac922e-9f49-4fd6-adbf-b27e345ac812.png#clientId=u4c5d9407-f5db-4&from=paste&height=784&id=u0798e122&originHeight=784&originWidth=1766&originalType=binary&ratio=1&rotation=0&showTitle=false&size=117786&status=done&style=none&taskId=u4c0e85eb-6376-4f93-8132-7e551bccd6f&title=&width=1766)
-![image.png](https://cdn.nlark.com/yuque/0/2022/png/12552073/1653919500434-1e466d84-176b-4179-ba81-65e5e2df0f6c.png#clientId=ud9641b8a-ad8f-4&from=paste&height=731&id=u7a53acf9&originHeight=731&originWidth=1729&originalType=binary&ratio=1&rotation=0&showTitle=false&size=96667&status=done&style=none&taskId=u46a69ca9-f527-424f-aa4f-e9049dd5c99&title=&width=1729)
-![image.png](https://cdn.nlark.com/yuque/0/2022/png/12552073/1653919533150-fe1a0cc8-67bc-474a-ae5f-9ab8f24c6093.png#clientId=ud9641b8a-ad8f-4&from=paste&height=854&id=ua46cbb17&originHeight=854&originWidth=1788&originalType=binary&ratio=1&rotation=0&showTitle=false&size=104056&status=done&style=none&taskId=u6de9cc06-826e-4199-95dc-37b6b2937b1&title=&width=1788)![image.png](https://cdn.nlark.com/yuque/0/2022/png/12552073/1653919578303-6ea0b312-598e-4b02-9b59-15e899aae389.png#clientId=ud9641b8a-ad8f-4&from=paste&height=494&id=u60eb5d89&originHeight=494&originWidth=1810&originalType=binary&ratio=1&rotation=0&showTitle=false&size=137500&status=done&style=none&taskId=u9e1f0022-5537-48be-baf1-d1968e1d35c&title=&width=1810)
+![image.png](../assets/remote-images/1f329b33983c.png)
+![image.png](../assets/remote-images/c8fda8f8166e.png)
+![image.png](../assets/remote-images/4273dddaada4.png)![image.png](../assets/remote-images/5c5c66ae2aaf.png)
